@@ -15,18 +15,6 @@
       "xhdpi": { "width": 64, "height": 64 },
       "xxhdpi": { "width": 96, "height": 96 }
     }
-  }, {
-    "description": "Launcher icon",
-    "imageList": [
-      "/svg/ic_launcher.svg"
-    ],
-    "sizes": {
-      "ldpi": { "width": 36, "height": 36 },
-      "mdpi": { "width": 48, "height": 48 },
-      "hdpi": { "width": 72, "height": 72 },
-      "xhdpi": { "width": 96, "height": 96 },
-      "xxhdpi": { "width": 144, "height": 144 }
-    }
   }],
-  "outputFolder": "C:\\Users\\Archi\\Desktop\\svg-android\\out"
+  "outputFolder": "C:\\svg-android\\out"
 }
