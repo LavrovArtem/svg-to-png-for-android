@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <script class="util">
+      function sendMsg(action, data, callback) {
+        var xhr = new XMLHttpRequest();
+
+        xhr.open('POST', 'http://127.0.0.1:1337/' + action, true);
+        xhr.addEventListener('readystatechange', function () {
+          if (xhr.readyState === xhr.DONE) {
+            if (xhr.status === 200) {
+              try {
+                var parsedAnswer = JSON.parse(xhr.responseText);
+              } catch (e) {
+                console.log(e);
+              }
+              callback(parsedAnswer);
+            } else
+              console.log('Error with code ' + xhr.status + ': ' + xhr.statusText);
+          }
+        });
+        xhr.send(JSON.stringify(data));
+      }
+
+      Array.prototype.forEachAsync = function (handler, callback) {
+        var self = this
+          , index = -1
+          , tempCallback = function () {
+            index++;
+
+            if (self.length === index)
+              callback && callback();
+            else
+              handler(self[index], tempCallback);
+          };
+
+        tempCallback();
+      }
+    </script>
+  </head>
+  <body>
+    <div>
+      <h2>Original image</h2>
+      <img id="origin_image"/>
+    </div>
+    <div>
+      <h2>Converter</h2>
+      <canvas width="36" height="36"></canvas>
+    </div>
+
+    <script>
+      (function() {
+        var DRAWABLE_RES_TYPES = [ 'ldpi', 'mdpi', 'hdpi', 'xhdpi', 'xxhdpi' ]
+          , SVG_IMAGE_NAME_REGEXP = /[.*]*\/([^\/]+)\.svg$/i;
+
+        var canvas = document.querySelector('canvas')
+          , context = canvas.getContext('2d')
+          , image = document.getElementById('origin_image');
+
+        sendMsg('get_image_list', {}, function (imageInfo) {
+          imageInfo.forEachAsync(function(group, callback) {
+            group.imageList.forEachAsync(function(imagePath, callback) {
+              var imageName = imagePath.match(SVG_IMAGE_NAME_REGEXP)[1];
+
+              image.setAttribute('src', imagePath);
+              image.addEventListener('load', function () {
+                image.removeEventListener('load', arguments.callee);
+
+                DRAWABLE_RES_TYPES.forEachAsync(function(drawableType, callback) {
+                  if (!(drawableType in group.sizes))
+                    return callback();
+
+                  canvas.width = group.sizes[drawableType].width;
+                  canvas.height = group.sizes[drawableType].height;
+                  context.drawImage(image, 0, 0, canvas.width, canvas.height);
+
+                  sendMsg('save_image', {
+                    name: imageName,
+                    type: drawableType,
+                    body: canvas.toDataURL('image/png')
+                  }, callback);
+                }, callback);
+              });
+            }, callback);
+          }, function() {
+            sendMsg('all_is_done', {}, function() {
+              window.close();
+            });
+          });
+        });
+      })();
+    </script>
+  </body>
+</html>
